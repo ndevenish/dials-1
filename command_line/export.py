@@ -1,7 +1,6 @@
 from __future__ import absolute_import, division, print_function
 
 import logging
-import os
 import sys
 
 from libtbx.phil import parse
@@ -651,26 +650,26 @@ if __name__ == "__main__":
 
     usage = "dials.export models.expt reflections.pickle [options]"
 
-    # Create the option parser
-    if os.getenv("DIALS_EXPORT_DO_NOT_CHECK_FORMAT"):
+    parser = OptionParser(
+        usage=usage,
+        read_experiments=True,
+        read_reflections=True,
+        check_format=False,
+        phil=phil_scope,
+        epilog=help_message,
+    )
+    # Quickly parse to check the PHIL only
+    params, options = parser.parse_args(quick_parse=True, show_diff_phil=False)
+    if params.format == "best":
+        # BEST export requires check_format switched on
         parser = OptionParser(
             usage=usage,
             read_experiments=True,
             read_reflections=True,
-            check_format=False,
             phil=phil_scope,
             epilog=help_message,
         )
-    else:
-        parser = OptionParser(
-            usage=usage,
-            read_experiments=True,
-            read_reflections=True,
-            phil=phil_scope,
-            epilog=help_message,
-        )
-
-    # Get the parameters
+    # Do the real parse, including loading experiments
     params, options = parser.parse_args(show_diff_phil=False)
 
     # Configure the logging
@@ -678,8 +677,6 @@ if __name__ == "__main__":
 
     # Print the version number
     logger.info(dials_version())
-    if os.getenv("DIALS_EXPORT_DO_NOT_CHECK_FORMAT"):
-        logger.info("(format checks disabled due to environment variable)")
 
     # Log the diff phil
     diff_phil = parser.diff_phil.as_str()
